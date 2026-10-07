@@ -1,0 +1,7 @@
+{
+  "name": "postit",
+  "description": "firefox-post-it notes storage",
+  "path": "@HOST_PATH@",
+  "type": "stdio",
+  "allowed_extensions": ["@EXT_ID@"]
+}

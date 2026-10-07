@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Post-it options</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; max-width: 560px; margin: 24px auto; padding: 0 16px; }
+    fieldset { margin: 0 0 16px; border: 1px solid #ccc; border-radius: 4px; }
+    label { display: block; margin: 6px 0; }
+    code { background: #eee; padding: 1px 4px; border-radius: 3px; word-break: break-all; }
+    .ok { color: #070; }
+    .err { color: #b00; }
+  </style>
+</head>
+<body>
+  <h1>Post-it</h1>
+
+  <fieldset>
+    <legend>Notes root</legend>
+    <p>Root: <code id="root">unknown</code></p>
+    <p id="status"></p>
+    <button id="test">Test connection</button>
+    <p><small>Set by <code>native/install.sh --root &lt;dir&gt;</code>; not editable here.</small></p>
+  </fieldset>
+
+  <fieldset>
+    <legend>New notes</legend>
+    <label>Color
+      <select id="color">
+        <option>yellow</option>
+        <option>pink</option>
+        <option>green</option>
+        <option>blue</option>
+        <option>purple</option>
+        <option>orange</option>
+      </select>
+    </label>
+    <label>Width <input type="number" id="w" min="140" max="1200" step="10"> px</label>
+    <label>Height <input type="number" id="h" min="60" max="1200" step="10"> px</label>
+  </fieldset>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Post-it",
+  "version": "0.1.0",
+  "description": "Sticky notes on web pages, stored as Markdown files (e.g. in an Obsidian vault).",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "firefox-post-it@vrutkovs",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  },
+  "permissions": ["nativeMessaging", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "icons": { "48": "icons/icon.svg", "96": "icons/icon.svg" },
+  "background": { "scripts": ["background.js"] },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content/render.js", "content/sticky.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Post-it",
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "options_ui": { "page": "options/options.html", "open_in_tab": true },
+  "commands": {
+    "new-note": {
+      "suggested_key": { "default": "Alt+Shift+N" },
+      "description": "New note on this page"
+    },
+    "minimize-all": {
+      "suggested_key": { "default": "Alt+Shift+M" },
+      "description": "Minimize / restore all notes"
+    },
+    "_execute_action": {
+      "suggested_key": { "default": "Alt+Shift+O" },
+      "description": "Open popup"
+    },
+    "open-options": {
+      "suggested_key": { "default": "Alt+Shift+L" },
+      "description": "Open options"
+    }
+  }
+}
