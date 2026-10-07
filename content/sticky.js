@@ -301,7 +301,7 @@
     const head = el('div', 'head');
     const min = button('–', 'Minimize');
     const title = el('span', 'title');
-    const colorBtn = button('●', 'Color');
+    const colorBtn = button('🎨', 'Color');
     const del = button('×', 'Delete');
     head.append(min, title, colorBtn, del);
 
