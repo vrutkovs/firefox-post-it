@@ -82,7 +82,7 @@ python3 -c 'import sys,struct,json; d=json.dumps({"op":"ping"}).encode(); sys.st
 
 Change shortcuts in `about:addons` → gear → Manage Extension Shortcuts if they clash with Zen or desktop bindings.
 
-- Right-click a page → **New note**.
+- Right-click a page → **New note**. New notes open at the mouse pointer.
 - Click the note body to edit; Esc or click outside to finish. Saves after 500 ms.
 - Drag by the header; resize from the bottom-right corner. Position and size are kept in browser storage, not in the file.
 - Edits made in Obsidian show when you switch back to the tab. If the file changed while you were editing, the note reloads from disk and shows a notice.

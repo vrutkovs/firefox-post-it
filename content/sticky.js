@@ -31,6 +31,7 @@
   let clock = 0;
   let lastReload = 0;
   let settings = { ...DEFAULTS };
+  let mouse = null; // last pointer position, where new notes appear
 
   // Shadow DOM keeps page CSS out and ours in.
   const host = document.createElement('postit-layer');
@@ -125,6 +126,15 @@
     notes.delete(st);
   }
 
+  // Top-left corner at the pointer, shifted so the whole note fits the viewport.
+  function mousePos() {
+    if (!mouse) return undefined;
+    return {
+      x: Math.max(0, Math.min(mouse.x, innerWidth - settings.w - MARGIN_PX)),
+      y: Math.max(0, Math.min(mouse.y, innerHeight - settings.h - MARGIN_PX)),
+    };
+  }
+
   function create(ignoreQuery) {
     const st = add({
       id: null,
@@ -135,7 +145,7 @@
       tags: [],
       ignore_query: ignoreQuery,
       mtime: null,
-    });
+    }, mousePos());
     st.dirty = true;
     flush(st);
     startEdit(st);
@@ -484,6 +494,9 @@
   window.addEventListener('focus', (e) => e.target === window && reload());
   window.addEventListener('pagehide', flushAll);
   window.addEventListener('resize', () => notes.forEach(applyPos));
+  for (const type of ['mousemove', 'contextmenu']) {
+    window.addEventListener(type, (e) => (mouse = { x: e.clientX, y: e.clientY }), { capture: true, passive: true });
+  }
 
   (async () => {
     const [css, stored] = await Promise.all([
