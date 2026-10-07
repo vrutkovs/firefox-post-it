@@ -94,3 +94,7 @@ make lint    # web-ext lint + shellcheck
 make build   # unsigned zip
 make         # list targets
 ```
+
+## License
+
+Copyright 2026 Vadim Rutkovsky. Licensed under the [Apache License 2.0](LICENSE).
