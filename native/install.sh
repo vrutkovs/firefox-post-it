@@ -1,13 +1,15 @@
 #!/bin/sh
-# Install the post-it native messaging host into a flatpak browser's app dir.
+# Install the post-it native messaging host for a flatpak browser (default)
+# or, with --native, for a non-sandboxed Firefox (Linux/macOS).
 set -eu
 
 APP_ID=app.zen_browser.zen
 EXT_ID=firefox-post-it@vrutkovs
 ROOT=
+NATIVE=
 
 usage() {
-  echo "usage: $0 [--app-id <flatpak id>] --root <absolute notes dir>"
+  echo "usage: $0 [--app-id <flatpak id> | --native] --root <absolute notes dir>"
 }
 
 die() {
@@ -18,6 +20,7 @@ die() {
 while [ $# -gt 0 ]; do
   case "$1" in
     --app-id) [ $# -ge 2 ] || die "--app-id needs a value"; APP_ID=$2; shift 2 ;;
+    --native) NATIVE=1; shift ;;
     --root) [ $# -ge 2 ] || die "--root needs a value"; ROOT=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
@@ -35,9 +38,18 @@ esac
 [ -d "$ROOT" ] || echo "warning: $ROOT does not exist yet" >&2
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-APP_DIR="$HOME/.var/app/$APP_ID"
-HOST_DIR="$APP_DIR/postit"
-NMH_DIR="$APP_DIR/.mozilla/native-messaging-hosts"
+if [ -z "$NATIVE" ]; then
+  # ~/.var/app/<id> is mounted at the same path inside the sandbox
+  APP_DIR="$HOME/.var/app/$APP_ID"
+  HOST_DIR="$APP_DIR/postit"
+  NMH_DIR="$APP_DIR/.mozilla/native-messaging-hosts"
+elif [ "$(uname -s)" = Darwin ]; then
+  HOST_DIR="$HOME/Library/Application Support/postit"
+  NMH_DIR="$HOME/Library/Application Support/Mozilla/NativeMessagingHosts"
+else
+  HOST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/postit"
+  NMH_DIR="$HOME/.mozilla/native-messaging-hosts"
+fi
 HOST_PATH="$HOST_DIR/postit_host.py"
 
 mkdir -p "$HOST_DIR" "$NMH_DIR"
