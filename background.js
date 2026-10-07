@@ -2,7 +2,13 @@
 
 const HOST = 'postit';
 const OPS = new Set(['ping', 'load', 'save', 'delete']);
-const TAB_COMMANDS = { 'new-note': 'new', 'minimize-all': 'minimizeAll' };
+const TAB_COMMANDS = {
+  'new-note': { type: 'new' },
+  'minimize-all': { type: 'minimizeAll' },
+};
+const MENU_CONTEXTS = ['page', 'selection', 'link', 'image'];
+// Content script runs only on http(s); hide the menu elsewhere.
+const MENU_URLS = ['http://*/*', 'https://*/*'];
 
 // Content scripts style their Shadow DOM with this text (pages can't load extension URLs).
 const cssText = fetch(browser.runtime.getURL('content/sticky.css')).then((r) => r.text());
@@ -32,14 +38,27 @@ browser.tabs.onUpdated.addListener(
   { properties: ['url'] },
 );
 
-browser.commands.onCommand.addListener(async (cmd) => {
+function runCommand(cmd, tab) {
   if (cmd === 'open-options') {
     browser.runtime.openOptionsPage();
     return;
   }
 
-  const type = TAB_COMMANDS[cmd];
-  if (!type) return;
+  const msg = TAB_COMMANDS[cmd];
+  if (msg && tab) browser.tabs.sendMessage(tab.id, msg).catch(() => {});
+}
+
+browser.commands.onCommand.addListener(async (cmd) => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-  if (tab) browser.tabs.sendMessage(tab.id, { type }).catch(() => {});
+  runCommand(cmd, tab);
 });
+
+// Right-click "New note". Recreated on each start: ids must be unique.
+async function createMenu() {
+  await browser.menus.removeAll();
+  browser.menus.create({ id: 'new-note', title: 'New note', contexts: MENU_CONTEXTS, documentUrlPatterns: MENU_URLS });
+}
+
+browser.runtime.onInstalled.addListener(createMenu);
+browser.runtime.onStartup.addListener(createMenu);
+browser.menus.onClicked.addListener((info, tab) => runCommand(info.menuItemId, tab));
