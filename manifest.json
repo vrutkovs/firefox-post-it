@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content/render.js", "content/sticky.js"],
+      "js": ["content/render.js", "content/todoist.js", "content/sticky.js"],
       "run_at": "document_idle"
     }
   ],

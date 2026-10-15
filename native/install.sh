@@ -6,10 +6,11 @@ set -eu
 APP_ID=app.zen_browser.zen
 EXT_ID=firefox-post-it@vrutkovs
 ROOT=
+TODOIST_NOTES=
 NATIVE=
 
 usage() {
-  echo "usage: $0 [--app-id <flatpak id> | --native] --root <absolute notes dir>"
+  echo "usage: $0 [--app-id <flatpak id> | --native] --root <absolute notes dir> [--todoist-notes <absolute Todoist dir>]"
 }
 
 die() {
@@ -22,6 +23,7 @@ while [ $# -gt 0 ]; do
     --app-id) [ $# -ge 2 ] || die "--app-id needs a value"; APP_ID=$2; shift 2 ;;
     --native) NATIVE=1; shift ;;
     --root) [ $# -ge 2 ] || die "--root needs a value"; ROOT=$2; shift 2 ;;
+    --todoist-notes) [ $# -ge 2 ] || die "--todoist-notes needs a value"; TODOIST_NOTES=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; exit 2 ;;
   esac
@@ -31,6 +33,10 @@ done
 case "$ROOT" in
   /*) ;;
   *) die "--root must be an absolute path" ;;
+esac
+case "$TODOIST_NOTES" in
+  ''|/*) ;;
+  *) die "--todoist-notes must be an absolute path" ;;
 esac
 case "$APP_ID" in
   */*|.*|'') die "invalid --app-id" ;;
@@ -56,11 +62,11 @@ mkdir -p "$HOST_DIR" "$NMH_DIR"
 install -m 755 "$HERE/postit_host.py" "$HOST_PATH"
 
 # python handles JSON escaping of arbitrary paths
-python3 - "$ROOT" "$HOST_PATH" "$EXT_ID" "$HERE/postit.json.in" "$HOST_DIR/config.json" "$NMH_DIR/postit.json" <<'EOF'
+python3 - "$ROOT" "$TODOIST_NOTES" "$HOST_PATH" "$EXT_ID" "$HERE/postit.json.in" "$HOST_DIR/config.json" "$NMH_DIR/postit.json" <<'EOF'
 import json, sys
-root, host_path, ext_id, template, config_out, manifest_out = sys.argv[1:]
+root, todoist_notes, host_path, ext_id, template, config_out, manifest_out = sys.argv[1:]
 with open(config_out, "w") as f:
-    json.dump({"root": root}, f, indent=2)
+    json.dump({"root": root, "todoist_notes": todoist_notes or None}, f, indent=2)
     f.write("\n")
 with open(template) as f:
     manifest = json.load(f)

@@ -1,6 +1,7 @@
 WEB_EXT ?= npx --yes web-ext
 APP_ID ?= app.zen_browser.zen
 ROOT ?=
+TODOIST_NOTES ?=
 DIST := web-ext-artifacts
 IGNORE := 'native/**' 'test/**' plan.md README.md Makefile '$(DIST)/**'
 WEB_EXT_OPTS := --source-dir . --ignore-files $(IGNORE)
@@ -41,10 +42,10 @@ run: ## Start Firefox with the extension loaded temporarily
 
 .PHONY: install-zen install-firefox check-root
 install-zen: check-root ## Install host for flatpak browser (ROOT=..., APP_ID=...)
-	native/install.sh --app-id "$(APP_ID)" --root "$(ROOT)"
+	native/install.sh --app-id "$(APP_ID)" --root "$(ROOT)" --todoist-notes "$(TODOIST_NOTES)"
 
 install-firefox: check-root ## Install host for non-sandboxed Firefox (ROOT=...)
-	native/install.sh --native --root "$(ROOT)"
+	native/install.sh --native --root "$(ROOT)" --todoist-notes "$(TODOIST_NOTES)"
 
 check-root:
 	@test -n "$(ROOT)" || { echo "usage: make $(MAKECMDGOALS) ROOT=/absolute/notes/dir"; exit 1; }

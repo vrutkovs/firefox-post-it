@@ -4,6 +4,7 @@
   globalThis.__postitLoaded = true;
 
   const { parse, build } = globalThis.PostitRender;
+  const { showTodoist } = globalThis.PostitTodoist;
 
   const SAVE_DELAY_MS = 500;
   const POS_DELAY_MS = 300;
@@ -39,9 +40,10 @@
   const shadow = host.attachShadow({ mode: 'closed' });
   const style = el('style');
   const layer = el('div', 'layer');
+  const todoist = el('div', 'todoist');
   const toast = el('div', 'toast');
   toast.hidden = true;
-  shadow.append(style, layer, toast);
+  shadow.append(style, layer, todoist, toast);
   document.documentElement.append(host);
 
   function el(tag, cls, text) {
@@ -247,6 +249,7 @@
 
     const stored = await browser.storage.local.get(res.notes.map((n) => `pos:${n.rel}`));
     if (gen !== generation) return;
+    showTodoist(todoist, res.todoist);
 
     // Notes changed locally since this load started keep their local state.
     const busy = (st) => st.editing || st.dirty || st.saving || st.touched > startClock;
@@ -300,6 +303,7 @@
     flushAll();
     for (const st of [...notes]) detach(st);
     pageUrl = u;
+    showTodoist(todoist, []);
     generation++;
     load();
   }

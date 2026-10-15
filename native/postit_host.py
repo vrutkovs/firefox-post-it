@@ -68,6 +68,17 @@ def read_config(config_path):
     return root
 
 
+def todoist_root(config_path):
+    with open(config_path, encoding="utf-8") as f:
+        cfg = json.load(f)
+    path = cfg.get("todoist_notes")
+    if path is None:
+        return None
+    if not isinstance(path, str) or not os.path.isabs(path):
+        raise HostError("config: todoist_notes must be an absolute path")
+    return path
+
+
 def load_root(config_path):
     root = read_config(config_path)
     if not os.path.isdir(root):
@@ -325,7 +336,44 @@ def op_ping(config_path):
     }
 
 
-def op_load(root, msg):
+def todoist_links(directory, url):
+    if not directory or not os.path.isdir(directory):
+        return []
+    target = urllib.parse.urldefrag(url)[0]
+    links = []
+    for parent, dirs, files in os.walk(directory, followlinks=False):
+        dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(parent, d))]
+        for name in sorted(files):
+            path = os.path.join(parent, name)
+            if not name.endswith(EXT) or os.path.islink(path):
+                continue
+            try:
+                with open(path, encoding="utf-8") as f:
+                    if f.readline().strip() != "---":
+                        continue
+                    fields = {}
+                    for _ in range(100):
+                        line = f.readline()
+                        if not line or line.strip() == "---":
+                            break
+                        key, sep, value = line.partition(":")
+                        if sep and key.strip().strip('"') in ("title", "todoist_url"):
+                            fields[key.strip().strip('"')] = scalar(value.strip())
+            except (OSError, UnicodeError):
+                continue
+            title, link = fields.get("title"), fields.get("todoist_url")
+            if not isinstance(title, str) or not isinstance(link, str):
+                continue
+            parsed = urllib.parse.urlsplit(link)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                continue
+            urls = re.findall(r"https?://[^\s<>)\]]+", title)
+            if any(urllib.parse.urldefrag(u.rstrip('.,;:!?'))[0] == target for u in urls):
+                links.append(link)
+    return links
+
+
+def op_load(root, msg, todoist_dir=None):
     url = msg.get("url")
     dirs = [(resolve_dir(root, url, False), False)]
     base = resolve_dir(root, url, True)
@@ -345,7 +393,7 @@ def op_load(root, msg):
             if size > MAX_REPLY:
                 raise HostError("too_large: notes for this page exceed 1 MB")
             notes.append(n)
-    return {"notes": notes}
+    return {"notes": notes, "todoist": todoist_links(todoist_dir, url)}
 
 
 def op_save(root, msg):
@@ -425,7 +473,10 @@ def handle(msg, config_path=CONFIG_PATH):
         fn = OPS.get(op)
         if fn is None:
             raise HostError(f"unknown op: {op!r}")
-        return fn(load_root(config_path), msg)
+        root = load_root(config_path)
+        if op == "load":
+            return op_load(root, msg, todoist_root(config_path))
+        return fn(root, msg)
     except HostError as e:
         return {"error": str(e)}
     except Exception as e:

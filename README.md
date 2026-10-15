@@ -71,6 +71,19 @@ python3 -c 'import sys,struct,json; d=json.dumps({"op":"ping"}).encode(); sys.st
   | ~/.local/share/postit/postit_host.py | tail -c +5
 ```
 
+## Todoist links (optional)
+
+Set `TODOIST_NOTES` when installing the host to scan Markdown files under that directory, including subdirectories:
+
+```sh
+make install-zen ROOT=~/Documents/obsidian/vadim/3-Resources/Highlights \
+  TODOIST_NOTES=~/Documents/obsidian/vadim/1-Projects/Todoist
+```
+
+For plain Firefox, use `make install-firefox` with the same arguments. For a flatpak browser, also grant access to the Todoist directory with `flatpak override --user app.zen_browser.zen --filesystem=~/Documents/obsidian/vadim/1-Projects/Todoist` and restart the browser. Reinstall the host to change the directory. If `TODOIST_NOTES` is unset, the integration is disabled.
+
+When a note's frontmatter `title` contains the current page URL and its `todoist_url` is an HTTP(S) URL, a ☑ icon appears at the top right of the page. Click it to open the task in Todoist. The integration reads Todoist notes but does not change them.
+
 ## Usage
 
 | Shortcut | Action |

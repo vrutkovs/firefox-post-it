@@ -288,6 +288,59 @@ class NoteTest(Base):
         self.assertEqual(os.listdir(self.root), [])
 
 
+class TodoistTest(Base):
+    URL = "https://github.com/VictoriaMetrics/operator/pull/2716"
+    TASK = "https://app.todoist.com/app/task/6hhwVCJ75qR4VRFV"
+
+    def setUp(self):
+        super().setUp()
+        self.todoist = os.path.join(self.tmp.name, "Todoist")
+        os.makedirs(os.path.join(self.todoist, "PRs"))
+        with open(self.config, "w") as f:
+            json.dump({"root": self.root, "todoist_notes": self.todoist}, f)
+
+    def task(self, title, todoist_url=TASK, name="task.md"):
+        path = os.path.join(self.todoist, "PRs", name)
+        with open(path, "w") as f:
+            f.write('---\n' + 'title: ' + json.dumps(title) + '\n' + 'todoist_url: ' + json.dumps(todoist_url) + '\n---\n' + self.URL)
+        return path
+
+    def test_matches_link_in_title_recursively(self):
+        self.task(f"[reconcile: skip PVC update]({self.URL})")
+        self.assertEqual(self.call(op="load", url=self.URL)["todoist"], [self.TASK])
+        self.assertEqual(self.call(op="load", url=self.URL + "#discussion")["todoist"], [self.TASK])
+
+    def test_does_not_match_other_page_or_body(self):
+        self.task("[other](https://github.com/VictoriaMetrics/operator/pull/27160) " + self.URL + "-suffix")
+        self.assertEqual(self.call(op="load", url=self.URL)["todoist"], [])
+
+    def test_ignores_unsafe_links_and_symlinks(self):
+        self.task(self.URL, "javascript:alert(1)")
+        outside = os.path.join(self.tmp.name, "outside.md")
+        with open(outside, "w") as f:
+            f.write('---\ntitle: ' + json.dumps(self.URL) + '\ntodoist_url: ' + json.dumps(self.TASK) + '\n---\n')
+        os.symlink(outside, os.path.join(self.todoist, "PRs", "linked.md"))
+        self.assertEqual(self.call(op="load", url=self.URL)["todoist"], [])
+
+    def test_optional_directory_and_missing_directory(self):
+        with open(self.config, "w") as f:
+            json.dump({"root": self.root}, f)
+        self.assertEqual(self.call(op="load", url=self.URL)["todoist"], [])
+        with open(self.config, "w") as f:
+            json.dump({"root": self.root, "todoist_notes": self.todoist + "-missing"}, f)
+        self.assertEqual(self.call(op="load", url=self.URL)["todoist"], [])
+
+    def test_invalid_directory_setting(self):
+        with open(self.config, "w") as f:
+            json.dump({"root": self.root, "todoist_notes": "relative"}, f)
+        self.assertIn("error", self.call(op="load", url=self.URL))
+
+    def test_multiple_tasks(self):
+        self.task(self.URL)
+        self.task(self.URL, "https://app.todoist.com/app/task/second", "second.md")
+        self.assertEqual(sorted(self.call(op="load", url=self.URL)["todoist"]), sorted([self.TASK, "https://app.todoist.com/app/task/second"]))
+
+
 class SizeTest(Base):
     def test_load_cap(self):
         d = os.path.join(self.root, "a.com", "index")
@@ -308,6 +361,16 @@ class SizeTest(Base):
         data = h.encode_reply({"body": "x" * (2 * 1024 * 1024)})
         self.assertLess(len(data), 1024 * 1024)
         self.assertIn("error", unframe_all(data)[0])
+
+
+class InstallTest(Base):
+    def test_todoist_notes_option(self):
+        env = {**os.environ, "HOME": self.tmp.name, "XDG_DATA_HOME": os.path.join(self.tmp.name, "data")}
+        todoist = os.path.join(self.tmp.name, "Todoist")
+        subprocess.run(["sh", os.path.join(os.path.dirname(HOST), "install.sh"), "--native", "--root", self.root,
+                        "--todoist-notes", todoist], env=env, check=True, capture_output=True)
+        with open(os.path.join(env["XDG_DATA_HOME"], "postit", "config.json")) as f:
+            self.assertEqual(json.load(f)["todoist_notes"], todoist)
 
 
 class FramingTest(Base):
