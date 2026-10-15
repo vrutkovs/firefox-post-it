@@ -315,7 +315,24 @@
     const head = el('div', 'head');
     const min = button('–', 'Minimize');
     const title = el('span', 'title');
-    const colorBtn = button('🎨', 'Color');
+    const colorBtn = button('', 'Color');
+    colorBtn.setAttribute('aria-label', 'Color');
+    const brush = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    brush.setAttribute('viewBox', '0 0 24 24');
+    brush.setAttribute('width', '14');
+    brush.setAttribute('height', '14');
+    brush.setAttribute('fill', 'none');
+    brush.setAttribute('stroke', 'currentColor');
+    brush.setAttribute('stroke-width', '2');
+    brush.setAttribute('stroke-linecap', 'round');
+    brush.setAttribute('stroke-linejoin', 'round');
+    brush.setAttribute('aria-hidden', 'true');
+    const handle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    handle.setAttribute('d', 'M11 7 17 1a2 2 0 0 1 3 3l-6 6');
+    const bristles = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bristles.setAttribute('d', 'm11 7 6 6-6 6a4 4 0 0 1-4 1l-5 2 2-5a4 4 0 0 1 1-4z');
+    brush.append(handle, bristles);
+    colorBtn.append(brush);
     const del = button('×', 'Delete');
     head.append(min, title, colorBtn, del);
 
