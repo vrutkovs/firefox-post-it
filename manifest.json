@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Post-it",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sticky notes on web pages, stored as Markdown files (e.g. in an Obsidian vault).",
   "browser_specific_settings": {
     "gecko": {

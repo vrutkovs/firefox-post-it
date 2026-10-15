@@ -9,28 +9,23 @@
 }
 
 .todoist {
-  position: fixed;
-  top: 16px;
-  right: 16px;
   display: flex;
-  gap: 6px;
+  gap: 2px;
 }
 
 .todoist-link {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: #e44332;
-  color: white;
-  font: 22px system-ui, sans-serif;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  color: #444;
+  font: 14px system-ui, sans-serif;
   text-decoration: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .todoist-link:hover {
-  background: #c63126;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .note {

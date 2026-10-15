@@ -27,6 +27,7 @@
   const NOTE_FIELDS = ['id', 'rel', 'url', 'body', 'color', 'tags', 'ignore_query', 'mtime'];
 
   const notes = new Set();
+  let todoistLinks = [];
   let pageUrl = cleanUrl(location.href);
   let generation = 0;
   let clock = 0;
@@ -40,10 +41,9 @@
   const shadow = host.attachShadow({ mode: 'closed' });
   const style = el('style');
   const layer = el('div', 'layer');
-  const todoist = el('div', 'todoist');
   const toast = el('div', 'toast');
   toast.hidden = true;
-  shadow.append(style, layer, todoist, toast);
+  shadow.append(style, layer, toast);
   document.documentElement.append(host);
 
   function el(tag, cls, text) {
@@ -249,7 +249,8 @@
 
     const stored = await browser.storage.local.get(res.notes.map((n) => `pos:${n.rel}`));
     if (gen !== generation) return;
-    showTodoist(todoist, res.todoist);
+    todoistLinks = res.todoist;
+    for (const st of notes) showTodoist(st.el.todoist, todoistLinks);
 
     // Notes changed locally since this load started keep their local state.
     const busy = (st) => st.editing || st.dirty || st.saving || st.touched > startClock;
@@ -303,7 +304,7 @@
     flushAll();
     for (const st of [...notes]) detach(st);
     pageUrl = u;
-    showTodoist(todoist, []);
+    todoistLinks = [];
     generation++;
     load();
   }
@@ -317,24 +318,34 @@
     const title = el('span', 'title');
     const colorBtn = button('', 'Color');
     colorBtn.setAttribute('aria-label', 'Color');
-    const brush = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    brush.setAttribute('viewBox', '0 0 24 24');
-    brush.setAttribute('width', '14');
-    brush.setAttribute('height', '14');
-    brush.setAttribute('fill', 'none');
-    brush.setAttribute('stroke', 'currentColor');
-    brush.setAttribute('stroke-width', '2');
-    brush.setAttribute('stroke-linecap', 'round');
-    brush.setAttribute('stroke-linejoin', 'round');
-    brush.setAttribute('aria-hidden', 'true');
-    const handle = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    handle.setAttribute('d', 'M11 7 17 1a2 2 0 0 1 3 3l-6 6');
-    const bristles = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    bristles.setAttribute('d', 'm11 7 6 6-6 6a4 4 0 0 1-4 1l-5 2 2-5a4 4 0 0 1 1-4z');
-    brush.append(handle, bristles);
-    colorBtn.append(brush);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const paletteIcon = document.createElementNS(svgNS, 'svg');
+    paletteIcon.setAttribute('viewBox', '0 0 24 24');
+    paletteIcon.setAttribute('width', '14');
+    paletteIcon.setAttribute('height', '14');
+    paletteIcon.setAttribute('fill', 'none');
+    paletteIcon.setAttribute('stroke', 'currentColor');
+    paletteIcon.setAttribute('stroke-width', '2');
+    paletteIcon.setAttribute('stroke-linecap', 'round');
+    paletteIcon.setAttribute('stroke-linejoin', 'round');
+    paletteIcon.setAttribute('aria-hidden', 'true');
+    const outline = document.createElementNS(svgNS, 'path');
+    outline.setAttribute('d', 'M12 22a10 10 0 1 1 10-10c0 1.7-1.3 3-3 3h-1.8a2 2 0 0 0-1.8 2.9l.4.9A2 2 0 0 1 14 22z');
+    const spots = [[8, 8], [13, 6], [18, 10], [7, 13]].map(([cx, cy]) => {
+      const spot = document.createElementNS(svgNS, 'circle');
+      spot.setAttribute('cx', cx);
+      spot.setAttribute('cy', cy);
+      spot.setAttribute('r', '1');
+      spot.setAttribute('fill', 'currentColor');
+      spot.setAttribute('stroke', 'none');
+      return spot;
+    });
+    paletteIcon.append(outline, ...spots);
+    colorBtn.append(paletteIcon);
+    const todoist = el('div', 'todoist');
+    showTodoist(todoist, todoistLinks);
     const del = button('×', 'Delete');
-    head.append(min, title, colorBtn, del);
+    head.append(min, title, todoist, colorBtn, del);
 
     const palette = el('div', 'palette');
     palette.hidden = true;
@@ -372,12 +383,12 @@
 
     enableDrag(st, head);
     new ResizeObserver(() => onResize(st)).observe(root);
-    return { root, title, min, body, palette, textarea: null };
+    return { root, title, min, body, palette, todoist, textarea: null };
   }
 
   function enableDrag(st, head) {
     head.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || e.target.closest('button')) return;
+      if (e.button !== 0 || e.target.closest('button, a')) return;
       e.preventDefault();
       const dx = e.clientX - st.pos.x;
       const dy = e.clientY - st.pos.y;
